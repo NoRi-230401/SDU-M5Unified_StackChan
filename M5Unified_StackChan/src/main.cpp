@@ -2,7 +2,7 @@
 #include <M5Unified.h>
 #include "AudioOutputM5Speaker.h"
 #include <AudioFileSourceSD.h>
-#include <AudioGeneratorWAV.h>
+#include <AudioGeneratorMP3.h>
 #include <AudioFileSourceBuffer.h>
 #include <Avatar.h> // https://github.com/meganetaaan/m5stack-avatar
 #include <ServoEasing.hpp> // https://github.com/ArminJo/ServoEasing       
@@ -30,7 +30,7 @@ int fileCount = 0;
 
 static constexpr size_t WAVE_SIZE = 320;
 static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
-static AudioGeneratorWAV wav;
+static AudioGeneratorMP3 wav;
 static AudioFileSourceSD *file = nullptr;
 static AudioFileSourceBuffer *buff = nullptr;
 const int preallocateBufferSize = 50*1024;
@@ -190,7 +190,7 @@ void file_read()
     M5.Lcd.println("SD Wait...");
     delay(500);
   }
-  File root = SD.open("/wav");
+  File root = SD.open("/mp3");
   if (root) {
     File file = root.openNextFile();
     while (file) {
@@ -199,10 +199,10 @@ void file_read()
       } else {
         // File
         String filename = file.name();
-        String dirname = "/wav/";
-//        Serial.println(filename.indexOf(".wav"));
+        String dirname = "/mp3/";
+        Serial.println(filename);
 //        M5.Lcd.println(filename.indexOf(".wav"));
-        if (filename.indexOf(".wav") != -1) {
+        if (filename.indexOf("mp3") != -1) {
           // Find
           fileList[fileCount] = dirname + filename;
           fileCount++;
