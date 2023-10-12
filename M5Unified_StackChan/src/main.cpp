@@ -12,8 +12,8 @@
 #if defined(ARDUINO_M5STACK_Core2)
   // #define SERVO_PIN_X 13  //Core2 PORT C
   // #define SERVO_PIN_Y 14
- #define SERVO_PIN_X 33  //Core2 PORT A
- #define SERVO_PIN_Y 32
+ #define SERVO_PIN_X 13  //Core2 PORT A
+ #define SERVO_PIN_Y 14
 #elif defined( ARDUINO_M5STACK_FIRE )
   #define SERVO_PIN_X 21
   #define SERVO_PIN_Y 22
@@ -33,7 +33,7 @@ static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
 static AudioGeneratorWAV wav;
 static AudioFileSourceSD *file = nullptr;
 static AudioFileSourceBuffer *buff = nullptr;
-const int preallocateBufferSize = 5*1024;
+const int preallocateBufferSize = 50*1024;
 uint8_t *preallocateBuffer;
 
 using namespace m5avatar;
@@ -119,7 +119,7 @@ void lipSync(void *args)
     }
     avatar->setMouthOpenRatio(mouth_ratio);
 
-    delay(50);
+    delay(1);
   }
 }
 
@@ -184,7 +184,7 @@ void file_read()
 {
  // SDカードマウント待ち
  int time_out = 0;
-  while (false == SD.begin(GPIO_NUM_4, SPI, 25000000)) {
+  while (false == SD.begin(GPIO_NUM_4, SPI, 15000000)) {
     if(time_out++ > 6) return;
     Serial.println("SD Wait...");
     M5.Lcd.println("SD Wait...");
@@ -244,12 +244,12 @@ void setup() {
   { /// custom setting
     auto spk_cfg = M5.Speaker.config();
     /// Increasing the sample_rate will improve the sound quality instead of increasing the CPU load.
-    spk_cfg.sample_rate = 96000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
+    spk_cfg.sample_rate = 48000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
 //    spk_cfg.sample_rate = 48000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
     //spk_cfg.task_priority = configMAX_PRIORITIES - 2;
-//    spk_cfg.task_priority = 5;
+    spk_cfg.task_priority = 10;
     spk_cfg.dma_buf_count = 20;
-    spk_cfg.dma_buf_len = 512;
+    spk_cfg.dma_buf_len = 256;
     spk_cfg.task_pinned_core = PRO_CPU_NUM;
     M5.Speaker.config(spk_cfg);
   }
@@ -258,8 +258,11 @@ void setup() {
   M5.Lcd.clear();
   M5.Lcd.setCursor(0,0);
   M5.Lcd.setTextSize(2);
+  M5.Speaker.begin();
   M5.Speaker.setChannelVolume(m5spk_virtual_channel, 180);
+  M5.Speaker.setVolume(180);
 
+  M5.Speaker.tone(2000, 100);
   Servo_setup();
   delay(1000);
   file_read();
@@ -268,7 +271,7 @@ void setup() {
   avatar.init();
   avatar.addTask(lipSync, "lipSync");
   avatar.addTask(servo, "servo");
-  xTaskCreateUniversal(speachTask, "speachTask", 4096, nullptr, 2, nullptr, APP_CPU_NUM);
+  xTaskCreateUniversal(speachTask, "speachTask", 4096, nullptr, 10, nullptr, APP_CPU_NUM);
 }
 
 void loop() {
