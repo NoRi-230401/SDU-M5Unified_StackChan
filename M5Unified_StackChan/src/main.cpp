@@ -40,7 +40,7 @@ static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
 static AudioGeneratorMP3 wav;
 static AudioFileSourceSD *file = nullptr;
 static AudioFileSourceBuffer *buff = nullptr;
-const int preallocateBufferSize = 50*1024;
+const int preallocateBufferSize = 100*1024;
 uint8_t *preallocateBuffer;
 
 using namespace m5avatar;
@@ -126,7 +126,7 @@ void lipSync(void *args)
     }
     avatar->setMouthOpenRatio(mouth_ratio);
 
-    vTaskDelay(100/portTICK_PERIOD_MS);
+    vTaskDelay(50/portTICK_PERIOD_MS);
   }
 }
 
@@ -238,13 +238,13 @@ void setup() {
   { /// custom setting
     auto spk_cfg = M5.Speaker.config();
     /// Increasing the sample_rate will improve the sound quality instead of increasing the CPU load.
-    spk_cfg.sample_rate = 96000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
+    spk_cfg.sample_rate = 48000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
 //    spk_cfg.sample_rate = 48000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
     //spk_cfg.task_priority = configMAX_PRIORITIES - 2;
     // 音声が途切れる場合は下記3つのパラメータを調整してみてください。（あまり増やすと動かなくなる場合あり）
     spk_cfg.task_priority = 1;
-    spk_cfg.dma_buf_count = 10;
-    spk_cfg.dma_buf_len = 1024;
+    spk_cfg.dma_buf_count = 20;
+    spk_cfg.dma_buf_len = 512;
     spk_cfg.task_pinned_core = PRO_CPU_NUM;
     M5.Speaker.config(spk_cfg);
   }

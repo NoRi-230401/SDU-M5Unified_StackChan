@@ -34,5 +34,6 @@ An M5Stack library for rendering avatar faces <https://github.com/meganetaaan/m5
 * mp3ファイルのサンプリング周波数は16khzか24khzにしてください。<br>
 * ファイル名に全角文字や長いファイル名はつかえません。10文字以内で作成してください。<br>
 * サンプルのmp3ファイルがmp3ディレクトリに入っています。<br>
+* サイズの大きいMP3ファイルを再生すると途切れることがあります。<br>
 この音声データは[「VOICEVOX;ずんだもん」](https://voicevox.hiroshiba.jp/ "Title")を使用して作成しました。<br>
 <br><br>
