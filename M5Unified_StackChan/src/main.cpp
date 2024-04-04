@@ -37,7 +37,7 @@ int fileCount = 0;
 
 static constexpr size_t WAVE_SIZE = 320;
 static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
-static AudioGeneratorMP3 wav;
+static AudioGeneratorMP3 mp3;
 static AudioFileSourceSD *file = nullptr;
 static AudioFileSourceBuffer *buff = nullptr;
 const int preallocateBufferSize = 100*1024;
@@ -50,7 +50,7 @@ void stop(void)
 {
   if (file == nullptr) return;
   out.stop();
-  wav.stop();
+  mp3.stop();
 //  id3->RegisterMetadataCB(nullptr, nullptr);
 //  id3->close();
   file->close();
@@ -65,13 +65,13 @@ void play(const char* fname)
   file = new AudioFileSourceSD(fname);
   buff = new AudioFileSourceBuffer(file, preallocateBuffer, preallocateBufferSize);
 //  wav.begin(file, &out);
-  wav.begin(buff, &out);
+  mp3.begin(buff, &out);
   delay(10);
-  while (wav.isRunning())
+  while (mp3.isRunning())
   {
 //    while(wav.loop()) {delay(1);}
-    while(wav.loop()) {}
-      wav.stop(); 
+    while(mp3.loop()) {}
+      mp3.stop(); 
       file->close();
       delete file;
       delete buff;
@@ -277,7 +277,7 @@ void loop() {
   float gazeX, gazeY;
   int data_index = 0;
   avatar.getGaze(&gazeY, &gazeX);
-  if(!wav.isRunning()) {
+  if(!mp3.isRunning()) {
     data_index = random(0, fileCount);
     Serial.printf("data_index = %d fileCount = %d \r\n", data_index, fileCount);
     if(data_index < fileCount){
