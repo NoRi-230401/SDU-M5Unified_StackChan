@@ -6,6 +6,10 @@
 #include <AudioFileSourceBuffer.h>
 #include <Avatar.h> // https://github.com/meganetaaan/m5stack-avatar
 #include <ServoEasing.hpp> // https://github.com/ArminJo/ServoEasing       
+#if defined(ARDUINO_M5STACK_CORES3)
+  #include <gob_unifiedButton.hpp>
+  goblib::UnifiedButton unifiedButton;
+#endif
 
 #define USE_SERVO
 #ifdef USE_SERVO
@@ -20,6 +24,9 @@
 #elif defined( ARDUINO_M5Stack_Core_ESP32 )
   #define SERVO_PIN_X 21
   #define SERVO_PIN_Y 22
+#elif defined( ARDUINO_M5STACK_CORES3 )
+  #define SERVO_PIN_X 1
+  #define SERVO_PIN_Y 2
 #endif
 #endif
 
@@ -78,7 +85,7 @@ void play(const char* fname)
 #ifdef USE_SERVO
 #define START_DEGREE_VALUE_X 90
 //#define START_DEGREE_VALUE_Y 90
-#define START_DEGREE_VALUE_Y 85 //
+#define START_DEGREE_VALUE_Y 70 //
 ServoEasing servo_x;
 ServoEasing servo_y;
 #endif
@@ -119,7 +126,7 @@ void lipSync(void *args)
     }
     avatar->setMouthOpenRatio(mouth_ratio);
 
-    delay(1);
+    vTaskDelay(100/portTICK_PERIOD_MS);
   }
 }
 
@@ -148,22 +155,6 @@ void servo(void *args)
 
 static void speachTask(void*)
 {
-  float gazeX, gazeY;
-  int data_index = 0;
-  for (;;)
-  {
-    avatar.getGaze(&gazeY, &gazeX);
-    if(!wav.isRunning()) {
-      data_index = random(0, fileCount);
-      Serial.printf("data_index = %d fileCount = %d \r\n", data_index, fileCount);
-      if(data_index < fileCount){
-        avatar.setExpression(Expression::Happy);
-        // Serial.printf("data_index-data_num = %d\r\n", data_index-data_num);
-        play(fileList[data_index].c_str());
-      }
-    }
-    vTaskDelay(2000 + 1500 * random(20));
-  }
 }
 
 void Servo_setup() {
@@ -234,6 +225,9 @@ void setup() {
 //cfg.external_spk_detail.omit_spk_hat    = true; // exclude SPK HAT
 
   M5.begin(cfg);
+#if defined( ARDUINO_M5STACK_CORES3 )
+  unifiedButton.begin(&M5.Display, goblib::UnifiedButton::appearance_t::transparent_all);
+#endif
 
   preallocateBuffer = (uint8_t *)malloc(preallocateBufferSize);
   if (!preallocateBuffer) {
@@ -244,12 +238,13 @@ void setup() {
   { /// custom setting
     auto spk_cfg = M5.Speaker.config();
     /// Increasing the sample_rate will improve the sound quality instead of increasing the CPU load.
-    spk_cfg.sample_rate = 24000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
+    spk_cfg.sample_rate = 96000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
 //    spk_cfg.sample_rate = 48000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
     //spk_cfg.task_priority = configMAX_PRIORITIES - 2;
-    spk_cfg.task_priority = 23;
-    spk_cfg.dma_buf_count = 20;
-    spk_cfg.dma_buf_len = 128;
+    // 音声が途切れる場合は下記3つのパラメータを調整してみてください。（あまり増やすと動かなくなる場合あり）
+    spk_cfg.task_priority = 1;
+    spk_cfg.dma_buf_count = 10;
+    spk_cfg.dma_buf_len = 1024;
     spk_cfg.task_pinned_core = PRO_CPU_NUM;
     M5.Speaker.config(spk_cfg);
   }
@@ -271,9 +266,25 @@ void setup() {
   avatar.init();
   avatar.addTask(lipSync, "lipSync");
   avatar.addTask(servo, "servo");
-  xTaskCreateUniversal(speachTask, "speachTask", 4096, nullptr, 1, nullptr, APP_CPU_NUM);
+//  xTaskCreateUniversal(speachTask, "speachTask", 4096, nullptr, 1, nullptr, APP_CPU_NUM);
 }
 
 void loop() {
-  delay(100);
+  M5.update();
+#if defined( ARDUINO_M5STACK_CORES3 )
+  unifiedButton.update();
+#endif
+  float gazeX, gazeY;
+  int data_index = 0;
+  avatar.getGaze(&gazeY, &gazeX);
+  if(!wav.isRunning()) {
+    data_index = random(0, fileCount);
+    Serial.printf("data_index = %d fileCount = %d \r\n", data_index, fileCount);
+    if(data_index < fileCount){
+      avatar.setExpression(Expression::Happy);
+      // Serial.printf("data_index-data_num = %d\r\n", data_index-data_num);
+      play(fileList[data_index].c_str());
+    }
+    vTaskDelay(2000 + 1500 * random(20));
+  }
 }

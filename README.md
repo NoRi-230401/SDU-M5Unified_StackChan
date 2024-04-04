@@ -1,5 +1,5 @@
 # M5Unified_StackChan
-独り言を言うｽﾀｯｸﾁｬﾝです。セリフをSDカードにwavファイルで入れておくとランダムに再生します。
+独り言を言うｽﾀｯｸﾁｬﾝです。セリフをSDカードにmp3ファイルで入れておくとランダムに再生します。
 <br><br>
 @mongonta555 さんの[ｽﾀｯｸﾁｬﾝ M5GoBottom版組み立てキット](https://raspberrypi.mongonta.com/about-products-stackchan-m5gobottom-version/ "Title")に対応しています。<br>
 
@@ -30,9 +30,9 @@ An M5Stack library for rendering avatar faces <https://github.com/meganetaaan/m5
 ---
 
 ### 使い方 ###
-* SDカードに、wavというディレクトリを作りそこにwavファイルを入れておきます<br>
-* wavファイルのサンプリング周波数は16khzか24khzにしてください。<br>
-* ファイル名に全角文字や長いファイル名はつかえません。<br>
-* サンプルのwavファイルがwavディレクトリに入っています。<br>
+* SDカードに、mp3というディレクトリを作りそこにmp3ファイルを入れておきます<br>
+* mp3ファイルのサンプリング周波数は16khzか24khzにしてください。<br>
+* ファイル名に全角文字や長いファイル名はつかえません。10文字以内で作成してください。<br>
+* サンプルのmp3ファイルがmp3ディレクトリに入っています。<br>
 この音声データは[「VOICEVOX;ずんだもん」](https://voicevox.hiroshiba.jp/ "Title")を使用して作成しました。<br>
 <br><br>
