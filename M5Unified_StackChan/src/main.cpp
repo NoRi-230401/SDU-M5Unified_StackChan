@@ -4,31 +4,43 @@
 #include <AudioFileSourceSD.h>
 #include <AudioGeneratorMP3.h>
 #include <AudioFileSourceBuffer.h>
-#include <Avatar.h> // https://github.com/meganetaaan/m5stack-avatar
-#include <ServoEasing.hpp> // https://github.com/ArminJo/ServoEasing       
+#include <Avatar.h>        // https://github.com/meganetaaan/m5stack-avatar
+#include <ServoEasing.hpp> // https://github.com/ArminJo/ServoEasing
 #if defined(ARDUINO_M5STACK_CORES3)
-  #include <gob_unifiedButton.hpp>
-  goblib::UnifiedButton unifiedButton;
+#include <gob_unifiedButton.hpp>
+goblib::UnifiedButton unifiedButton;
 #endif
 
-#define USE_SERVO
-#ifdef USE_SERVO
-#if defined(ARDUINO_M5STACK_Core2)
-  // #define SERVO_PIN_X 13  //Core2 PORT C
-  // #define SERVO_PIN_Y 14
- #define SERVO_PIN_X 13  //Core2 PORT A
- #define SERVO_PIN_Y 14
-#elif defined( ARDUINO_M5STACK_FIRE )
-  #define SERVO_PIN_X 21
-  #define SERVO_PIN_Y 22
-#elif defined( ARDUINO_M5Stack_Core_ESP32 )
-  #define SERVO_PIN_X 21
-  #define SERVO_PIN_Y 22
-#elif defined( ARDUINO_M5STACK_CORES3 )
-  #define SERVO_PIN_X 1
-  #define SERVO_PIN_Y 2
-#endif
-#endif
+// #define USE_SERVO
+// #ifdef USE_SERVO
+// #if defined(ARDUINO_M5STACK_Core2)
+// // #define SERVO_PIN_X 13  //Core2 PORT C
+// // #define SERVO_PIN_Y 14
+// #define SERVO_PIN_X 13 // Core2 PORT A
+// #define SERVO_PIN_Y 14
+// #elif defined(ARDUINO_M5STACK_FIRE)
+// #define SERVO_PIN_X 21
+// #define SERVO_PIN_Y 22
+// #elif defined(ARDUINO_M5Stack_Core_ESP32)
+// #define SERVO_PIN_X 21
+// #define SERVO_PIN_Y 22
+// #elif defined(ARDUINO_M5STACK_CORES3)
+// #define SERVO_PIN_X 1
+// #define SERVO_PIN_Y 2
+// #endif
+// #endif
+
+// --------------------------------------
+//  "SDU.cpp"  ---  by NoRi 2024-05-29
+// --------------------------------------
+bool USE_SERVO_ST = false;
+int SERVO_PIN_X = 13;
+int SERVO_PIN_Y = 14;
+uint8_t VOLUME_VAL = 10;
+extern bool servoTxtSDRead();
+extern bool volumeTxtSDRead();
+extern void SDU_lobby();
+// --------------------------------------
 
 /// set your wav filename
 const int maxFile = 100;
@@ -40,7 +52,7 @@ static AudioOutputM5Speaker out(&M5.Speaker, m5spk_virtual_channel);
 static AudioGeneratorMP3 mp3;
 static AudioFileSourceSD *file = nullptr;
 static AudioFileSourceBuffer *buff = nullptr;
-const int preallocateBufferSize = 100*1024;
+const int preallocateBufferSize = 100 * 1024;
 uint8_t *preallocateBuffer;
 
 using namespace m5avatar;
@@ -48,47 +60,64 @@ Avatar avatar;
 
 void stop(void)
 {
-  if (file == nullptr) return;
+  if (file == nullptr)
+    return;
   out.stop();
   mp3.stop();
-//  id3->RegisterMetadataCB(nullptr, nullptr);
-//  id3->close();
+  //  id3->RegisterMetadataCB(nullptr, nullptr);
+  //  id3->close();
   file->close();
   delete file;
   file = nullptr;
 }
 
-void play(const char* fname)
+void play(const char *fname)
 {
   Serial.printf("play file fname = %s\r\n", fname);
-  if (file != nullptr) { stop(); }
+  if (file != nullptr)
+  {
+    stop();
+  }
   file = new AudioFileSourceSD(fname);
   buff = new AudioFileSourceBuffer(file, preallocateBuffer, preallocateBufferSize);
-//  wav.begin(file, &out);
+  //  wav.begin(file, &out);
   mp3.begin(buff, &out);
   delay(10);
   while (mp3.isRunning())
   {
-//    while(wav.loop()) {delay(1);}
-    while(mp3.loop()) {}
-      mp3.stop(); 
-      file->close();
-      delete file;
-      delete buff;
-      file = nullptr;
-      buff = nullptr;
-      avatar.setExpression(Expression::Neutral);
-//    }
+    //    while(wav.loop()) {delay(1);}
+    while (mp3.loop())
+    {
+    }
+    mp3.stop();
+    file->close();
+    delete file;
+    delete buff;
+    file = nullptr;
+    buff = nullptr;
+    avatar.setExpression(Expression::Neutral);
+    //    }
   }
 }
 
-#ifdef USE_SERVO
+//-----------------------------------------
+// #ifdef USE_SERVO
+// #define START_DEGREE_VALUE_X 90
+// // #define START_DEGREE_VALUE_Y 90
+// #define START_DEGREE_VALUE_Y 70 //
+// ServoEasing servo_x;
+// ServoEasing servo_y;
+// #endif
+//-----------------------------------------
+// #ifdef USE_SERVO
 #define START_DEGREE_VALUE_X 90
-//#define START_DEGREE_VALUE_Y 90
-#define START_DEGREE_VALUE_Y 70 //
+// // #define START_DEGREE_VALUE_Y 90
+#define START_DEGREE_VALUE_Y 70
 ServoEasing servo_x;
 ServoEasing servo_y;
-#endif
+// #endif
+//-----------------------------------------
+
 static fft_t fft;
 static int16_t raw_data[WAVE_SIZE * 2];
 static float lipsync_level_max = 10.0f; // リップシンクの上限初期値
@@ -100,33 +129,37 @@ void lipSync(void *args)
   int level = 0;
   DriveContext *ctx = (DriveContext *)args;
   Avatar *avatar = ctx->getAvatar();
-   for (;;)
+  for (;;)
   {
     uint64_t level = 0;
     auto buf = out.getBuffer();
-    if (buf) {
-     memcpy(raw_data, buf, WAVE_SIZE * 2 * sizeof(int16_t));
+    if (buf)
+    {
+      memcpy(raw_data, buf, WAVE_SIZE * 2 * sizeof(int16_t));
       fft.exec(raw_data);
-      for (size_t bx = 5; bx <= 60; ++bx) { // リップシンクで抽出する範囲はここで指定(低音)0〜64（高音）
+      for (size_t bx = 5; bx <= 60; ++bx)
+      { // リップシンクで抽出する範囲はここで指定(低音)0〜64（高音）
         int32_t f = fft.get(bx);
         level += abs(f);
-        //Serial.printf("bx:%d, f:%d\n", bx, f) ;
+        // Serial.printf("bx:%d, f:%d\n", bx, f) ;
       }
-      //Serial.printf("level:%d\n", level >> 16);
+      // Serial.printf("level:%d\n", level >> 16);
     }
 
     // スレッド内でログを出そうとすると不具合が起きる場合があります。
-    //Serial.printf("data=%d\n\r", level >> 16);
-    mouth_ratio = (float)(level >> 16)/lipsync_level_max;
-    if (mouth_ratio > 1.2f) {
-      if (mouth_ratio > 1.5f) {
+    // Serial.printf("data=%d\n\r", level >> 16);
+    mouth_ratio = (float)(level >> 16) / lipsync_level_max;
+    if (mouth_ratio > 1.2f)
+    {
+      if (mouth_ratio > 1.5f)
+      {
         lipsync_level_max += 10.0f; // リップシンク上限を大幅に超えるごとに上限を上げていく。
       }
       mouth_ratio = 1.2f;
     }
     avatar->setMouthOpenRatio(mouth_ratio);
 
-    vTaskDelay(50/portTICK_PERIOD_MS);
+    vTaskDelay(50 / portTICK_PERIOD_MS);
   }
 }
 
@@ -135,69 +168,104 @@ void servo(void *args)
   float gazeX, gazeY;
   DriveContext *ctx = (DriveContext *)args;
   Avatar *avatar = ctx->getAvatar();
-   for (;;)
+  for (;;)
   {
-#ifdef USE_SERVO
-    avatar->getGaze(&gazeY, &gazeX);
-    servo_x.setEaseTo(START_DEGREE_VALUE_X + (int)(20.0 * gazeX));
-    if(gazeY < 0) {
-      int tmp = (int)(15.0 * gazeY);
-      if(tmp > 15) tmp = 15;
-      servo_y.setEaseTo(START_DEGREE_VALUE_Y + tmp);
-    } else {
-      servo_y.setEaseTo(START_DEGREE_VALUE_Y + (int)(10.0 * gazeY));
+    if (USE_SERVO_ST)
+    {
+      // #ifdef USE_SERVO
+      avatar->getGaze(&gazeY, &gazeX);
+      servo_x.setEaseTo(START_DEGREE_VALUE_X + (int)(20.0 * gazeX));
+      if (gazeY < 0)
+      {
+        int tmp = (int)(15.0 * gazeY);
+        if (tmp > 15)
+          tmp = 15;
+        servo_y.setEaseTo(START_DEGREE_VALUE_Y + tmp);
+      }
+      else
+      {
+        servo_y.setEaseTo(START_DEGREE_VALUE_Y + (int)(10.0 * gazeY));
+      }
+      synchronizeAllServosStartAndWaitForAllServosToStop();
+      // #endif
     }
-    synchronizeAllServosStartAndWaitForAllServosToStop();
-#endif
+
     delay(5000);
   }
 }
 
-static void speachTask(void*)
+static void speachTask(void *)
 {
 }
 
-void Servo_setup() {
-#ifdef USE_SERVO
-  if (servo_x.attach(SERVO_PIN_X, START_DEGREE_VALUE_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE)) {
-    Serial.print("Error attaching servo x");
+void Servo_setup()
+{
+  // read from SD: "/servo.txt" file
+  if (!servoTxtSDRead())
+  {
+    Serial.println("cannnot read servo.txt file ...");
   }
-  if (servo_y.attach(SERVO_PIN_Y, START_DEGREE_VALUE_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE)) {
-    Serial.print("Error attaching servo y");
+
+  if (USE_SERVO_ST)
+  {
+    // #ifdef USE_SERVO
+    // if (servo_x.attach(SERVO_PIN_X, START_DEGREE_VALUE_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+    if (!servo_x.attach(SERVO_PIN_X, START_DEGREE_VALUE_X, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+    {
+      // Serial.print("Error attaching servo x");
+      Serial.println("Error attaching servo x");
+    }
+
+    // if (servo_y.attach(SERVO_PIN_Y, START_DEGREE_VALUE_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+    if (!servo_y.attach(SERVO_PIN_Y, START_DEGREE_VALUE_Y, DEFAULT_MICROSECONDS_FOR_0_DEGREE, DEFAULT_MICROSECONDS_FOR_180_DEGREE))
+    {
+      // Serial.print("Error attaching servo y");
+      Serial.println("Error attaching servo y");
+    }
+    
+    servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
+    servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
+    setSpeedForAllServos(30);
+    // #endif
   }
-  servo_x.setEasingType(EASE_QUADRATIC_IN_OUT);
-  servo_y.setEasingType(EASE_QUADRATIC_IN_OUT);
-  setSpeedForAllServos(30);
-#endif
 }
 
 void file_read()
 {
- // SDカードマウント待ち
- int time_out = 0;
-  while (false == SD.begin(GPIO_NUM_4, SPI, 15000000)) {
-    if(time_out++ > 6) return;
+  // SDカードマウント待ち
+  int time_out = 0;
+  while (false == SD.begin(GPIO_NUM_4, SPI, 15000000))
+  {
+    if (time_out++ > 6)
+      return;
     Serial.println("SD Wait...");
     M5.Lcd.println("SD Wait...");
     delay(500);
   }
   File root = SD.open("/mp3");
-  if (root) {
+  if (root)
+  {
     File file = root.openNextFile();
-    while (file) {
-      if (file.isDirectory()) {
+    while (file)
+    {
+      if (file.isDirectory())
+      {
         // Dir skip
-      } else {
+      }
+      else
+      {
         // File
         String filename = file.name();
         String dirname = "/mp3/";
         Serial.println(filename);
-//        M5.Lcd.println(filename.indexOf(".wav"));
-        if (filename.indexOf("mp3") != -1) {
+        //        M5.Lcd.println(filename.indexOf(".wav"));
+        if (filename.indexOf("mp3") != -1)
+        {
           // Find
           fileList[fileCount] = dirname + filename;
           fileCount++;
-          if (maxFile <= fileCount) {
+          if (maxFile <= fileCount)
+          {
             break;
           }
         }
@@ -209,38 +277,49 @@ void file_read()
 
   Serial.println("File List");
   M5.Lcd.println("File List");
-  for (int i = 0; i < fileCount; i++) {
+  for (int i = 0; i < fileCount; i++)
+  {
     Serial.println(fileList[i]);
     M5.Lcd.println(fileList[i]);
   }
   delay(2000);
 }
 
-void setup() {
-  
+void setup()
+{
+
   auto cfg = M5.config();
 
-  cfg.external_spk = true;    /// use external speaker (SPK HAT / ATOMIC SPK)
-//cfg.external_spk_detail.omit_atomic_spk = true; // exclude ATOMIC SPK
-//cfg.external_spk_detail.omit_spk_hat    = true; // exclude SPK HAT
+  cfg.external_spk = true; /// use external speaker (SPK HAT / ATOMIC SPK)
+                           // cfg.external_spk_detail.omit_atomic_spk = true; // exclude ATOMIC SPK
+  // cfg.external_spk_detail.omit_spk_hat    = true; // exclude SPK HAT
 
   M5.begin(cfg);
-#if defined( ARDUINO_M5STACK_CORES3 )
+
+  // ***** for SD-Updater *********************
+  SDU_lobby();
+  // ******************************************
+
+#if defined(ARDUINO_M5STACK_CORES3)
   unifiedButton.begin(&M5.Display, goblib::UnifiedButton::appearance_t::transparent_all);
 #endif
 
   preallocateBuffer = (uint8_t *)malloc(preallocateBufferSize);
-  if (!preallocateBuffer) {
+  if (!preallocateBuffer)
+  {
     M5.Display.printf("FATAL ERROR:  Unable to preallocate %d bytes for app\n", preallocateBufferSize);
-    for (;;) { delay(1000); }
+    for (;;)
+    {
+      delay(1000);
+    }
   }
 
   { /// custom setting
     auto spk_cfg = M5.Speaker.config();
     /// Increasing the sample_rate will improve the sound quality instead of increasing the CPU load.
     spk_cfg.sample_rate = 48000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
-//    spk_cfg.sample_rate = 48000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
-    //spk_cfg.task_priority = configMAX_PRIORITIES - 2;
+                                 //    spk_cfg.sample_rate = 48000; // default:64000 (64kHz)  e.g. 48000 , 50000 , 80000 , 96000 , 100000 , 128000 , 144000 , 192000 , 200000
+    // spk_cfg.task_priority = configMAX_PRIORITIES - 2;
     // 音声が途切れる場合は下記3つのパラメータを調整してみてください。（あまり増やすと動かなくなる場合あり）
     spk_cfg.task_priority = 1;
     spk_cfg.dma_buf_count = 20;
@@ -251,13 +330,21 @@ void setup() {
   M5.begin(cfg);
 
   M5.Lcd.clear();
-  M5.Lcd.setCursor(0,0);
+  M5.Lcd.setCursor(0, 0);
   M5.Lcd.setTextSize(2);
   M5.Speaker.begin();
-  M5.Speaker.setChannelVolume(m5spk_virtual_channel, 180);
-  M5.Speaker.setVolume(180);
 
-  M5.Speaker.tone(2000, 100);
+  // *********************************************************
+  // read from SD: "/volume.txt" file
+  if (!volumeTxtSDRead())
+    Serial.println("cannnot read volume.txt file ...");
+
+  Serial.println("VOLUME_VAL = " + String(VOLUME_VAL, 10));
+  M5.Speaker.setChannelVolume(m5spk_virtual_channel, VOLUME_VAL);
+  M5.Speaker.setVolume(VOLUME_VAL);
+  // M5.Speaker.tone(2000, 100);
+  // **********************************************************
+
   Servo_setup();
   delay(1000);
   file_read();
@@ -266,21 +353,24 @@ void setup() {
   avatar.init();
   avatar.addTask(lipSync, "lipSync");
   avatar.addTask(servo, "servo");
-//  xTaskCreateUniversal(speachTask, "speachTask", 4096, nullptr, 1, nullptr, APP_CPU_NUM);
+  //  xTaskCreateUniversal(speachTask, "speachTask", 4096, nullptr, 1, nullptr, APP_CPU_NUM);
 }
 
-void loop() {
+void loop()
+{
   M5.update();
-#if defined( ARDUINO_M5STACK_CORES3 )
+#if defined(ARDUINO_M5STACK_CORES3)
   unifiedButton.update();
 #endif
   float gazeX, gazeY;
   int data_index = 0;
   avatar.getGaze(&gazeY, &gazeX);
-  if(!mp3.isRunning()) {
+  if (!mp3.isRunning())
+  {
     data_index = random(0, fileCount);
     Serial.printf("data_index = %d fileCount = %d \r\n", data_index, fileCount);
-    if(data_index < fileCount){
+    if (data_index < fileCount)
+    {
       avatar.setExpression(Expression::Happy);
       // Serial.printf("data_index-data_num = %d\r\n", data_index-data_num);
       play(fileList[data_index].c_str());
