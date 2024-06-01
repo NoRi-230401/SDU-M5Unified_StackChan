@@ -1,7 +1,9 @@
 # SDU-M5Unified_StackChan
 
-SD-Updaterに対応したスタックチャン独り言（MP3ファイル）ソフトです。
-@mongonta555 さんのソフトから次の修正を行いました。
+SD-Updaterに対応したスタックチャン独り言（MP3ファイル）ソフトです。<br>
+<br>
+
+@mongonta555 さんのソフトから次の修正を行いました。<br>
 
 - SD-Updater対応。
 - サーボOn/Off、PIN番号の設定を外部ファイル（servo.txt）で設定。
