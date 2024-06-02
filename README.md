@@ -3,10 +3,10 @@
 SD-Updaterに対応したスタックチャン独り言（MP3ファイル）ソフトです。<br>
 <br>
 
-@mongonta555 さんのソフトから次の修正を行いました。<br>
+mongonta0716 さんのソフトから次の修正を行いました。<br>
 
 - SD-Updater対応。
-- サーボOn/Off、PIN番号の設定を外部ファイル（servo.txt）で設定。
+- USE_SERVO On/Off、PIN番号の設定を外部ファイル（servo.txt）で設定。
 - volumeの値を外部ファイル（volume.txt）で指定。
 - 立上げ時のbeepを消音。
 
@@ -20,7 +20,7 @@ SDに入れたソフトを切り替えることができるようになります
 SD直下に置いてください。
 
 - servo.txt<br>
-１行目(SERVO_ON_OFF)： "on" または、 "off"<br>
+１行目(USE_SERVO)   ： "on" または、 "off"<br>
 ２行目(SERVO_PIN_X) ： "13"(PortC)　または、"33"(PortA)<br>
 ３行目(SERVO_PIN_Y) ： "14"(Portc)　または、"32"(PortA)<br>
 <br>
@@ -66,7 +66,7 @@ tobozoさん開発。SDに複数のBINファイルを入れて、ソフトを切
  https://github.com/tobozo/M5Stack-SD-Updater<br><br>
 
 
-タカオさん、2023/7/29 ｽﾀｯｸﾁｬﾝ お誕生日会 2023のLTで、M5Stack-SD-Updaterの概要を説明した時のスライド<br>
+mongonta0716さん、2023/7/29 ｽﾀｯｸﾁｬﾝ お誕生日会 2023のLTで、M5Stack-SD-Updaterの概要を説明した時のスライド<br>
 https://speakerdeck.com/mongonta0716/sutatukutiyandefu-shu-apuriwoqie-riti-erutekunituku
 
 <br><br>

@@ -36,7 +36,7 @@ goblib::UnifiedButton unifiedButton;
 bool USE_SERVO_ST = false;
 int SERVO_PIN_X = 13;
 int SERVO_PIN_Y = 14;
-uint8_t VOLUME_VAL = 10;
+uint8_t VOLUME_VAL = 180;
 extern bool servoTxtSDRead();
 extern bool volumeTxtSDRead();
 extern void SDU_lobby();
